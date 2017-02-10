@@ -1,0 +1,177 @@
+
+
+	Overview
+	========
+	
+	Backup service for TodoServer is a java application with REST web services. 
+	System allows backup data from TodoServer. Backup process is fully async, 
+	any backup requested is done produced in background and can be retrieved.
+	
+	
+	
+	Dependencies
+	============
+	To be able use backup service you will need:
+	- Java installed, JDK at least 1.8
+	- Maven installed
+	
+	
+	
+	Package content
+	===============
+	Server package consists of:
+	- Project source folder: src
+	- Maven build file: pom.xml
+	- Windows script files: run.bat, test.bat
+	- Linux/Mac script files: run.sh, test.sh
+
+
+
+	Build & Run
+	===========
+	Backup server build is fully powered by Maven. Build sources, run application, 
+	run integration tests you can do by running maven with different parameters:
+	- Cleanup: 			mvn clean
+	- Compile sources:	mvn compile
+	- Build jar: 		mvn package
+	- Run application: 	mvn spring-boot:run -DskipTests=true
+		^^ requires compiled sources
+	- Run tests:		mvn test
+	
+	Additional scripts are provided to simplify usage:
+	- Windows
+		- run.bat - build sources and run applicaton
+		- test.bat - build sources and run integration tests
+	- Linux/Mac
+		- run.sh - build sources and run applicaton
+		- test.sh - build sources and run integration tests
+
+
+
+	Service configuration
+	=====================
+	Service configuration is stored in the property file:
+		src\main\resources\application.properties
+	
+	Detail information on configuration is available within this file.
+
+
+
+	Project information
+	===================
+	- Backup server is written on java
+	- Maven used as build tool
+	- Backup server backups data from TodoServer, information about TodoServer is configurable
+	- Backup server provides REST endpoints
+	- Backup server will not use persistent storages (at least this version)
+	- Backup server works asyncrhonous from client perspective	
+	- Backup server can work even if TodoServer is not running, however backups will not be produced
+
+	
+	
+	Technologies
+	============
+	- Spring - dependency injection system
+	- Spring Boot - application container with powerfull set of features
+	- Swagger - Displays information on REST endpoints	
+	- Jackson - Json processing utilities
+	- JUnit - Code testing framework
+	
+	
+	
+	Solution
+	========
+	Client using REST endpoints is able to schedule backup for execution.
+	All backups may be executed one by one or simultaneously depending on 
+	configuration. When backup is scheduled its id is added to 'backup queue'
+	for processing and new backup status record is created. Backup queue 
+	dispatched in separate thread, on this stage server initialize all
+	required storages and retrieves list of users from TodoServer. 
+	Server schedules backup processing for each pair: backup id and user id.
+	Backup of each pair is done in async way.
+	During backup of the account server retrieves all user Todo's from
+	TodoServer, all of them are stored into local storage.
+	If backup is run into issues all non-processed tasks for the same backup will be
+	skipped no more new ones will be created. 
+
+	
+	
+	Development assumptions
+	=======================
+	- To improve usability backup status will include 3 different dates:
+		- date requested - date when backup was scheduled
+		- date started - date when backup was started 
+		- date finished - date when backup was finished (successfuly or not)
+	- Server limit amount of queued backups to avoid abusing
+	- Server limit amount of concurrently running backups to avoid memory issues
+	- Server limit amount of concurrent http requests to TodoServer to prevent abuse
+	- Server will return error if client will do export request in these cases:
+		- backup does not exist
+		- backup is in progress
+		- backup failed
+	- Server will mark backup failed when:
+		- It can't retrieve list of users
+		- It can't retrieve data for any user
+		- It can't store any todo data
+	- Server will not backup users without todo items
+
+	- Server will not use async messaging - with such amount of features it will add extra
+		code complexity, but would be nice to have when more features will be added
+	- Server will not share any data between different backups - this may significantly 
+		improve backup performance but limit ways to extend server features. Also
+		It kills the idea of multiple backups: all backups will have the same data,
+		retrieved at the same point of time.
+	- Server will not try to finish already failed backups - client can check status
+		for each backup and schedule new one in case when previous was failed. If server
+		retry backup and user will request new one we will have two similar backups
+
+
+
+	Public resources
+	=======================
+	- Backup accounts (rest endpoint)
+		- request: POST /backups
+		- request body: N/A
+		- response body (json):	
+			{
+				"backupId": <backup Id>
+			}
+
+	- List backups (rest endpoint)
+		- request: GET /backups
+		- request body: N/A
+		- response body (json):	
+			[
+				{
+					"backupId": <backup Id>,
+					"dateRequested": <date backup was requested>,
+					"dateStarted": <date backup was started>,
+					"dateFinished": <date backup was finished>,
+					"status": <backup status>
+				},
+				...
+			]
+			
+		Supported backup statuses:
+			- In progress
+			- OK
+			- Failed
+
+	- Export backup (rest endpoint)
+		- request: GET /exports/{backup id}
+		- request body:	N/A
+		- response body (csv):	
+			Username;TodoItemId;Subject;DueDate;Done
+			{userName};{todoItemId};{todoItemSubject};{todoItemDueDate};{todoItemDone}
+
+	- Display endpoints information (html)
+		- request: GET /swagger-ui.html
+		- request body: N/A
+		- reponse body : <html>
+	
+	Note: with default configuration these resources will be available at these locations:
+		- http://localhost:8080/swagger-ui.html
+		- http://localhost:8080/backups
+		- http://localhost:8080/exports/{backup id}
+
+	
