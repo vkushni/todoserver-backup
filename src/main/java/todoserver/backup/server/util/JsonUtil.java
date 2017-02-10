@@ -15,7 +15,6 @@ import todoserver.backup.server.api.exception.BackupServerException ;
  * Utility methods for working with json
  * 
  * @author vk
- *
  */
 public class JsonUtil
 {

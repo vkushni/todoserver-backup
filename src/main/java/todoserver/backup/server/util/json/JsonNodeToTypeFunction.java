@@ -8,6 +8,13 @@ import com.google.common.base.Function ;
 import todoserver.backup.server.api.exception.BackupServerException ;
 import todoserver.backup.server.util.JsonUtil ;
 
+/**
+ * Function for convertion from json node to concrete object type
+ * 
+ * @author vk
+ *
+ * @param <T>
+ */
 public class JsonNodeToTypeFunction < T > implements Function < JsonNode, T >
 {
     private Class < T > type ;
