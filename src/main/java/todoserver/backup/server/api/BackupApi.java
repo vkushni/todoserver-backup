@@ -16,18 +16,18 @@ import todoserver.backup.server.api.exception.BackupServerException ;
 public interface BackupApi
 {
     /**
-     * Schedule backup of all accounts, including all todo's for each account
-     * 
-     * @return
-     * @throws BackupServerException
-     */
-    BackupIdData scheduleBackup () throws BackupServerException ;
-
-    /**
      * List all backups
      * 
      * @return
      * @throws BackupServerException
      */
     List < BackupStatusData > listBackups () throws BackupServerException ;
+
+    /**
+     * Schedule backup of all accounts, including all todo's for each account
+     * 
+     * @return
+     * @throws BackupServerException
+     */
+    BackupIdData scheduleBackup () throws BackupServerException ;
 }
